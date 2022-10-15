@@ -1,6 +1,9 @@
 import logging
 from urllib.parse import urlparse
+import os
+from pprint import pprint
 
+from dotenv import load_dotenv
 import requests
 
 
@@ -50,9 +53,31 @@ def load_xkcd_comix(comix_number):
         logging.warning("Couldn't fetch or save url of xkcd image")
 
 
+def fetch_user_groups_from_vk(user_id):
+    """Get users groups from VK by user_id_token"""
+    method = 'groups.get'
+    url = f'https://api.vk.com/method/{method}'
+    params = {
+        'access_token': user_id,
+        'v': '5.131',
+        'extended': '1',
+    }
+
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    response = response.json()
+    pprint(response, sort_dicts=False)
+
+
 def main():
     logging.basicConfig(level=logging.DEBUG)
-    load_xkcd_comix(353)
+
+    load_dotenv()
+    client_id = os.getenv("VK_APP_CLIENT_ID")
+    user_id = os.getenv('VK_USER_TOKEN')
+
+    fetch_user_groups_from_vk(user_id)
+    # load_xkcd_comix(353)
 
 
 if __name__ == "__main__":
