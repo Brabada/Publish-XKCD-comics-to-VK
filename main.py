@@ -9,17 +9,24 @@ import requests
 
 def get_img_name_from_path(url):
     logging.debug(url)
-
     index = url.rfind('/') + 1
     logging.debug(f"Index of beginning Python: {index} in {url}")
     return url[index:]
 
 
-def fetch_xkcd_comix_url(comix_number):
+def fetch_xkcd_comix_json(comix_number):
     url = f"https://xkcd.com/{comix_number}/info.0.json"
     response = requests.get(url=url)
     response.raise_for_status()
-    return response.json().get('img')
+    return response.json()
+
+
+def print_xkcd_alt_from_json(comix_json):
+    print(comix_json.get('alt'))
+
+
+def get_comix_url_from_json(json):
+    return json.get('img')
 
 
 def save_xkcd_comix(comix_url):
@@ -35,7 +42,9 @@ def save_xkcd_comix(comix_url):
 
 def load_xkcd_comix(comix_number):
     try:
-        comix_url = fetch_xkcd_comix_url(comix_number)
+        comix_json = fetch_xkcd_comix_json(comix_number)
+        print_xkcd_alt_from_json(comix_json)
+        comix_url = get_comix_url_from_json(comix_json)
         save_xkcd_comix(comix_url)
     except requests.exceptions.HTTPError:
         logging.warning("Couldn't fetch or save url of xkcd image")
