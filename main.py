@@ -69,15 +69,39 @@ def fetch_user_groups_from_vk(user_id):
     pprint(response, sort_dicts=False)
 
 
+def fetch_address_for_upload_img(user_id, group_id):
+    """
+    Takes group_id and return server address to upload image on group wall
+    """
+
+    method = 'photos.getWallUploadServer'
+    url = f'https://api.vk.com/method/{method}'
+    params = {
+        'access_token': user_id,
+        'v': '5.131',
+        'group_id': group_id,
+    }
+
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    response = response.json()
+    if response.get('error'):
+        logging.warning(f"Get server address to upload error: "
+                        f"{response['error']['error_msg']}")
+    pprint(response, sort_dicts=False)
+
+
 def main():
     logging.basicConfig(level=logging.DEBUG)
 
     load_dotenv()
     client_id = os.getenv("VK_APP_CLIENT_ID")
     user_id = os.getenv('VK_USER_TOKEN')
+    group_id = os.getenv('VK_GROUP_ID')
 
-    fetch_user_groups_from_vk(user_id)
+    # fetch_user_groups_from_vk(user_id)
     # load_xkcd_comix(353)
+    fetch_address_for_upload_img(user_id, group_id)
 
 
 if __name__ == "__main__":
