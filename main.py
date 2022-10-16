@@ -69,7 +69,7 @@ def fetch_user_groups_from_vk(user_id):
     pprint(response, sort_dicts=False)
 
 
-def fetch_address_for_upload_img(user_id, group_id):
+def fetch_url_for_upload_img(user_id, group_id):
     """
     Takes group_id and return server address to upload image on group wall
     """
@@ -88,7 +88,79 @@ def fetch_address_for_upload_img(user_id, group_id):
     if response.get('error'):
         logging.warning(f"Get server address to upload error: "
                         f"{response['error']['error_msg']}")
-    pprint(response, sort_dicts=False)
+    return response['response']['upload_url']
+
+
+def send_img_to_vk_server(server_url):
+    """Take URL server to upload image and return metadata for saving img"""
+
+    with open('python.png', 'rb') as file:
+        files = {
+            'photo': file,
+        }
+        response = requests.post(server_url, files=files)
+        response.raise_for_status()
+    return response.json()
+
+
+def save_img_to_group_album(uploading_data, user_id, group_id):
+    """
+    Takes metadata for saving uploaded img to vk server in group album
+    Returns photo_id and owner_id for posting photo on wall"
+    """
+    # photos.saveWallPhoto
+    method = 'photos.saveWallPhoto'
+    url = f'https://api.vk.com/method/{method}'
+
+    #server, photo, hash
+    params = {
+        'access_token': user_id,
+        'group_id': group_id,
+        'v': '5.131',
+        'server': uploading_data['server'],
+        'photo': uploading_data['photo'],
+        'hash': uploading_data['hash'],
+    }
+
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    response = response.json()
+    if response.get('error'):
+        logging.warning(f"Trying to save uploaded image on server to group "
+                        f"album error: "
+                        f"{response['error']['error_msg']}")
+    photo_and_owner_ids = {
+        'owner_id': response['response'][0]['owner_id'],
+        'photo_id': response['response'][0]['id'],
+    }
+
+    return photo_and_owner_ids
+
+
+'После успешной загрузки фотографии Вы можете разместить её на стене, опубликовав' \
+' запись с помощью метода wall.post и указав идентификатор фотографии в формате ' \
+'"photo" + {owner_id} + "_" + {photo_id} (например, "photo12345_654321") в параметре attachments.' \
+' В {owner_id} необходимо указывать то же значение, которое пришло Вам в ответе от метода photos.saveWallPhoto.'
+
+
+def publish_img_on_group_wall(ids, user_id, group_id):
+
+    method = 'wall.post'
+    url = f'https://api.vk.com/method/{method}'
+
+    # attachments
+    attachments = f'photo{ids["owner_id"]}_{ids["photo_id"]}'
+    params = {
+        'access_token': user_id,
+        'v': '5.131',               # API version
+        'attachments': attachments, # Name of posted img
+        'owner_id': f'-{group_id}', # Group where post
+        'from_group': '1',          # Post by group
+    }
+
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+    pprint(response.json(), sort_dicts=False)
 
 
 def main():
@@ -101,7 +173,14 @@ def main():
 
     # fetch_user_groups_from_vk(user_id)
     # load_xkcd_comix(353)
-    fetch_address_for_upload_img(user_id, group_id)
+    server_url = fetch_url_for_upload_img(user_id, group_id)
+    uploading_data = send_img_to_vk_server(server_url)
+    owner_photo_ids = save_img_to_group_album(
+        uploading_data,
+        user_id,
+        group_id
+    )
+    publish_img_on_group_wall(owner_photo_ids, user_id, group_id)
 
 
 if __name__ == "__main__":
