@@ -8,54 +8,53 @@ from dotenv import load_dotenv
 import requests
 
 
-# https://xkcd.com/353/
-# https://xkcd.com/614/info.0.json
+def get_img_name_from_url(url):
+    """Extracting image name with extension from url"""
 
-def get_img_name_from_path(url):
-    logging.debug(url)
+    logging.debug(f"Extracting comic's name from URL: {url}")
     index = url.rfind('/') + 1
     logging.debug(f"Index of beginning name: {index} in {url}")
     return url[index:]
 
 
-def fetch_xkcd_comix_json(comix_number):
-    url = f"https://xkcd.com/{comix_number}/info.0.json"
+def fetch_xkcd_comics_json(comics_number):
+    url = f"https://xkcd.com/{comics_number}/info.0.json"
     response = requests.get(url=url)
     response.raise_for_status()
     return response.json()
 
 
-def print_xkcd_alt_from_json(comix_json):
-    return comix_json.get('alt')
+def print_xkcd_alt_from_json(comics_json):
+    return comics_json.get('alt')
 
 
-def get_comix_url_from_json(json):
+def get_comics_url_from_json(json):
     return json.get('img')
 
 
-def save_xkcd_comix(comix_url):
-    response = requests.get(comix_url)
+def save_xkcd_comics(comics_url):
+    response = requests.get(comics_url)
     response.raise_for_status()
-    comix = response.content
+    comics = response.content
 
-    comix_file_name = get_img_name_from_path(urlparse(comix_url).path)
-    logging.info(f'Comix name: {comix_file_name}')
-    with open(comix_file_name, 'wb') as file:
-        file.write(comix)
-    return comix_file_name
+    comics_file_name = get_img_name_from_url(urlparse(comics_url).path)
+    logging.info(f'Comics name: {comics_file_name}')
+    with open(comics_file_name, 'wb') as file:
+        file.write(comics)
+    return comics_file_name
 
 
-def load_xkcd_comix(comix_number):
+def load_xkcd_comics(comics_number):
     try:
-        comix_json = fetch_xkcd_comix_json(comix_number)
-        alt = print_xkcd_alt_from_json(comix_json)
-        comix_url = get_comix_url_from_json(comix_json)
-        comix_file_name = save_xkcd_comix(comix_url)
+        comics_json = fetch_xkcd_comics_json(comics_number)
+        alt = print_xkcd_alt_from_json(comics_json)
+        comics_url = get_comics_url_from_json(comics_json)
+        comics_file_name = save_xkcd_comics(comics_url)
     except requests.exceptions.HTTPError:
         logging.warning("Couldn't fetch or save url of xkcd image")
-    return comix_file_name, alt
+    return comics_file_name, alt
 
-def get_random_xkcd_comix_num():
+def get_random_xkcd_comics_num():
     response = requests.get('https://xkcd.com/info.0.json')
     response.raise_for_status()
     _to = response.json()['num']
@@ -64,10 +63,10 @@ def get_random_xkcd_comix_num():
 
 
 def load_random_xkcd_img():
-    """Loads random XKCD comix from site and returns comix file name and alt"""
+    """Loads random XKCD comics from site and returns comics file name and alt"""
 
-    comix_number = get_random_xkcd_comix_num()
-    return load_xkcd_comix(comix_number)
+    comics_number = get_random_xkcd_comics_num()
+    return load_xkcd_comics(comics_number)
 
 
 def fetch_user_groups_from_vk(user_id):
@@ -191,10 +190,10 @@ def main():
     user_id = os.getenv('VK_USER_TOKEN')
     group_id = os.getenv('VK_GROUP_ID')
 
-    comix_file_name, alt = load_random_xkcd_img()
+    comics_file_name, alt = load_random_xkcd_img()
 
     server_url = fetch_url_for_upload_img(user_id, group_id)
-    uploading_data = send_img_to_vk_server(server_url, comix_file_name)
+    uploading_data = send_img_to_vk_server(server_url, comics_file_name)
     owner_photo_ids = save_img_to_group_album(
         uploading_data,
         user_id,
@@ -204,10 +203,10 @@ def main():
     publish_img_on_group_wall(owner_photo_ids, user_id, group_id, alt)
 
     try:
-        os.remove(comix_file_name)
-        logging.info(f"File {comix_file_name} was successfully deleted.")
+        os.remove(comics_file_name)
+        logging.info(f"File {comics_file_name} was successfully deleted.")
     except FileNotFoundError:
-        logging.warning(f"File {comix_file_name} wasn't found for delete.")
+        logging.warning(f"File {comics_file_name} wasn't found for delete.")
 
 if __name__ == "__main__":
     main()
