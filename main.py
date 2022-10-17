@@ -25,7 +25,7 @@ def fetch_xkcd_comix_json(comix_number):
 
 
 def print_xkcd_alt_from_json(comix_json):
-    print(comix_json.get('alt'))
+    return comix_json.get('alt')
 
 
 def get_comix_url_from_json(json):
@@ -46,11 +46,12 @@ def save_xkcd_comix(comix_url):
 def load_xkcd_comix(comix_number):
     try:
         comix_json = fetch_xkcd_comix_json(comix_number)
-        print_xkcd_alt_from_json(comix_json)
+        alt = print_xkcd_alt_from_json(comix_json)
         comix_url = get_comix_url_from_json(comix_json)
         save_xkcd_comix(comix_url)
     except requests.exceptions.HTTPError:
         logging.warning("Couldn't fetch or save url of xkcd image")
+    return alt
 
 
 def fetch_user_groups_from_vk(user_id):
@@ -105,8 +106,8 @@ def send_img_to_vk_server(server_url):
 
 def save_img_to_group_album(uploading_data, user_id, group_id):
     """
-    Takes metadata for saving uploaded img to vk server in group album
-    Returns photo_id and owner_id for posting photo on wall"
+    Takes metadata for saving uploaded img from vk server to group album
+    Returns photo_id and owner_id for posting photo on wall
     """
     # photos.saveWallPhoto
     method = 'photos.saveWallPhoto'
@@ -122,7 +123,7 @@ def save_img_to_group_album(uploading_data, user_id, group_id):
         'hash': uploading_data['hash'],
     }
 
-    response = requests.get(url, params=params)
+    response = requests.post(url, params=params)
     response.raise_for_status()
     response = response.json()
     if response.get('error'):
@@ -143,7 +144,7 @@ def save_img_to_group_album(uploading_data, user_id, group_id):
 ' В {owner_id} необходимо указывать то же значение, которое пришло Вам в ответе от метода photos.saveWallPhoto.'
 
 
-def publish_img_on_group_wall(ids, user_id, group_id):
+def publish_img_on_group_wall(ids, user_id, group_id, message):
 
     method = 'wall.post'
     url = f'https://api.vk.com/method/{method}'
@@ -156,6 +157,7 @@ def publish_img_on_group_wall(ids, user_id, group_id):
         'attachments': attachments, # Name of posted img
         'owner_id': f'-{group_id}', # Group where post
         'from_group': '1',          # Post by group
+        'message': message,
     }
 
     response = requests.get(url, params=params)
@@ -172,7 +174,8 @@ def main():
     group_id = os.getenv('VK_GROUP_ID')
 
     # fetch_user_groups_from_vk(user_id)
-    # load_xkcd_comix(353)
+    message = load_xkcd_comix(353)
+
     server_url = fetch_url_for_upload_img(user_id, group_id)
     uploading_data = send_img_to_vk_server(server_url)
     owner_photo_ids = save_img_to_group_album(
@@ -180,7 +183,8 @@ def main():
         user_id,
         group_id
     )
-    publish_img_on_group_wall(owner_photo_ids, user_id, group_id)
+
+    publish_img_on_group_wall(owner_photo_ids, user_id, group_id, message)
 
 
 if __name__ == "__main__":
