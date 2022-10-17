@@ -1,4 +1,4 @@
-# Publish comics XKCD to VK
+# Publish XKCD comics  to VK
 
 Project that takes random comics from https://xkcd.com/ by [xkcd API](https://xkcd.com/json.html) and posts them
 its with author's comments to group in VK via [VK API](https://vk.com/dev/api_requests).
