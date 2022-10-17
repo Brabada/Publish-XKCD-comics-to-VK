@@ -8,10 +8,11 @@ from dotenv import load_dotenv
 import requests
 
 
+"""=============== XKCD functions section ==============="""
 def get_img_name_from_url(url):
     """Extracting image name with extension from url"""
 
-    logging.debug(f"Extracting comic's name from URL: {url}")
+    logging.debug(f"Extracting cfor'ings na: {url}")
     index = url.rfind('/') + 1
     logging.debug(f"Index of beginning name: {index} in {url}")
     return url[index:]
@@ -24,15 +25,12 @@ def fetch_xkcd_comics_json(comics_number):
     return response.json()
 
 
-def print_xkcd_alt_from_json(comics_json):
-    return comics_json.get('alt')
-
-
-def get_comics_url_from_json(json):
-    return json.get('img')
-
-
 def save_xkcd_comics(comics_url):
+    """
+    Download comics by comics_url and save to the root directory
+    Returns comics file name
+    """
+
     response = requests.get(comics_url)
     response.raise_for_status()
     comics = response.content
@@ -45,14 +43,23 @@ def save_xkcd_comics(comics_url):
 
 
 def load_xkcd_comics(comics_number):
+    """
+    Load xkcd comics from https://xkcd.com/ by comics number and save in
+    root directory
+    :return: comics file name and description from alt
+    """
+
     try:
         comics_json = fetch_xkcd_comics_json(comics_number)
-        alt = print_xkcd_alt_from_json(comics_json)
-        comics_url = get_comics_url_from_json(comics_json)
+        alt = comics_json.get('alt')
+        comics_url = comics_json.get('img')
         comics_file_name = save_xkcd_comics(comics_url)
     except requests.exceptions.HTTPError:
         logging.warning("Couldn't fetch or save url of xkcd image")
+    logging.info(f"Comics {comics_file_name} was loaded and saved in root "
+                 f"directory \"{os.path.curdir}\"")
     return comics_file_name, alt
+
 
 def get_random_xkcd_comics_num():
     response = requests.get('https://xkcd.com/info.0.json')
@@ -63,31 +70,30 @@ def get_random_xkcd_comics_num():
 
 
 def load_random_xkcd_img():
-    """Loads random XKCD comics from site and returns comics file name and alt"""
+    """
+    Loads random XKCD comics from site and returns comics file name and alt
+    """
 
-    comics_number = get_random_xkcd_comics_num()
+    try:
+        comics_number = get_random_xkcd_comics_num()
+    except requests.exceptions.HTTPError:
+        logging.warning("Can't load random xkcd comics number due HTTPError")
     return load_xkcd_comics(comics_number)
 
 
-def fetch_user_groups_from_vk(user_id):
-    """Get users groups from VK by user_id_token"""
-    method = 'groups.get'
-    url = f'https://api.vk.com/method/{method}'
-    params = {
-        'access_token': user_id,
-        'v': '5.131',
-        'extended': '1',
-    }
-
-    response = requests.get(url, params=params)
-    response.raise_for_status()
-    response = response.json()
-    pprint(response, sort_dicts=False)
+"""
+=============== VK API section ===============
+    Publishing of photo to group wall on VK:
+    1. Getting server address for loading photo to VK.
+    2. Loading photo to the server by address above.
+    3. Saving photo to group album from server.
+    4. Publish post in group with photo
+"""
 
 
-def fetch_url_for_upload_img(user_id, group_id):
+def fetch_url_for_uploading_img(user_id, group_id):
     """
-    Takes group_id and return server address to upload image on group wall
+    Takes group_id and return server address for uploading image
     """
 
     method = 'photos.getWallUploadServer'
@@ -192,7 +198,7 @@ def main():
 
     comics_file_name, alt = load_random_xkcd_img()
 
-    server_url = fetch_url_for_upload_img(user_id, group_id)
+    server_url = fetch_url_for_uploading_img(user_id, group_id)
     uploading_data = send_img_to_vk_server(server_url, comics_file_name)
     owner_photo_ids = save_img_to_group_album(
         uploading_data,
