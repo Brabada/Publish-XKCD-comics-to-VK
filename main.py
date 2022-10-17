@@ -1,3 +1,4 @@
+import random
 import logging
 from urllib.parse import urlparse
 import os
@@ -13,7 +14,7 @@ import requests
 def get_img_name_from_path(url):
     logging.debug(url)
     index = url.rfind('/') + 1
-    logging.debug(f"Index of beginning Python: {index} in {url}")
+    logging.debug(f"Index of beginning name: {index} in {url}")
     return url[index:]
 
 
@@ -37,10 +38,11 @@ def save_xkcd_comix(comix_url):
     response.raise_for_status()
     comix = response.content
 
-    comix_name = get_img_name_from_path(urlparse(comix_url).path)
-    logging.info(f'Comix name: {comix_name}')
-    with open(comix_name, 'wb') as file:
+    comix_file_name = get_img_name_from_path(urlparse(comix_url).path)
+    logging.info(f'Comix name: {comix_file_name}')
+    with open(comix_file_name, 'wb') as file:
         file.write(comix)
+    return comix_file_name
 
 
 def load_xkcd_comix(comix_number):
@@ -48,10 +50,24 @@ def load_xkcd_comix(comix_number):
         comix_json = fetch_xkcd_comix_json(comix_number)
         alt = print_xkcd_alt_from_json(comix_json)
         comix_url = get_comix_url_from_json(comix_json)
-        save_xkcd_comix(comix_url)
+        comix_file_name = save_xkcd_comix(comix_url)
     except requests.exceptions.HTTPError:
         logging.warning("Couldn't fetch or save url of xkcd image")
-    return alt
+    return comix_file_name, alt
+
+def get_random_xkcd_comix_num():
+    response = requests.get('https://xkcd.com/info.0.json')
+    response.raise_for_status()
+    _to = response.json()['num']
+    _from = 1
+    return random.randint(_from, _to)
+
+
+def load_random_xkcd_img():
+    """Loads random XKCD comix from site and returns comix file name and alt"""
+
+    comix_number = get_random_xkcd_comix_num()
+    return load_xkcd_comix(comix_number)
 
 
 def fetch_user_groups_from_vk(user_id):
@@ -92,10 +108,10 @@ def fetch_url_for_upload_img(user_id, group_id):
     return response['response']['upload_url']
 
 
-def send_img_to_vk_server(server_url):
+def send_img_to_vk_server(server_url, file_name):
     """Take URL server to upload image and return metadata for saving img"""
 
-    with open('python.png', 'rb') as file:
+    with open(file_name, 'rb') as file:
         files = {
             'photo': file,
         }
@@ -165,6 +181,8 @@ def publish_img_on_group_wall(ids, user_id, group_id, message):
     pprint(response.json(), sort_dicts=False)
 
 
+
+
 def main():
     logging.basicConfig(level=logging.DEBUG)
 
@@ -173,19 +191,23 @@ def main():
     user_id = os.getenv('VK_USER_TOKEN')
     group_id = os.getenv('VK_GROUP_ID')
 
-    # fetch_user_groups_from_vk(user_id)
-    message = load_xkcd_comix(353)
+    comix_file_name, alt = load_random_xkcd_img()
 
     server_url = fetch_url_for_upload_img(user_id, group_id)
-    uploading_data = send_img_to_vk_server(server_url)
+    uploading_data = send_img_to_vk_server(server_url, comix_file_name)
     owner_photo_ids = save_img_to_group_album(
         uploading_data,
         user_id,
         group_id
     )
 
-    publish_img_on_group_wall(owner_photo_ids, user_id, group_id, message)
+    publish_img_on_group_wall(owner_photo_ids, user_id, group_id, alt)
 
+    try:
+        os.remove(comix_file_name)
+        logging.info(f"File {comix_file_name} was successfully deleted.")
+    except FileNotFoundError:
+        logging.warning(f"File {comix_file_name} wasn't found for delete.")
 
 if __name__ == "__main__":
     main()
