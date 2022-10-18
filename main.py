@@ -87,15 +87,15 @@ def load_random_xkcd_comics():
 """=============== VK API section ==============="""
 
 
-def fetch_server_url_for_upload_img(user_id, group_id, v):
+def fetch_server_url_for_upload_img(access_token, group_id, v):
     """
-    Takes user_id, group_id and return vk server url for uploading image
+    Takes access_token, group_id and return vk server url for uploading image
     """
 
     method = 'photos.getWallUploadServer'
     url = f'https://api.vk.com/method/{method}'
     params = {
-        'access_token': user_id,
+        'access_token': access_token,
         'v': v,
         'group_id': group_id,
     }
@@ -116,16 +116,15 @@ def send_img_to_vk_server(server_url, file_name):
     and return metadata for uploaded image - server, photo, hash
     """
 
+    files = {}
     with open(file_name, 'rb') as file:
-        files = {
-            'photo': file
-        }
+        files['photo'] = file
         response = requests.post(server_url, files=files)
     response.raise_for_status()
     return response.json()
 
 
-def save_img_to_group_album(uploading_data, user_id, group_id, v):
+def save_img_to_group_album(uploading_data, access_token, group_id, v):
     """
     Takes metadata of uploaded img on vk server and saved its to the group
     album.
@@ -136,7 +135,7 @@ def save_img_to_group_album(uploading_data, user_id, group_id, v):
     url = f'https://api.vk.com/method/{method}'
 
     params = {
-        'access_token': user_id,
+        'access_token': access_token,
         'group_id': group_id,
         'v': v,
         'server': uploading_data['server'],
@@ -157,7 +156,7 @@ def save_img_to_group_album(uploading_data, user_id, group_id, v):
     return photo_and_owner_ids
 
 
-def publish_img_on_group_wall(ids, user_id, group_id, message, v):
+def publish_img_on_group_wall(ids, access_token, group_id, message, v):
     """
     Publish photo from group album by its photo and owners ids to the group
     wall with message
@@ -169,7 +168,7 @@ def publish_img_on_group_wall(ids, user_id, group_id, message, v):
 
     attachments = f'photo{ids["owner_id"]}_{ids["photo_id"]}'
     params = {
-        'access_token': user_id,
+        'access_token': access_token,
         'v': v,
         'attachments': attachments,  # Name of posted img
         'owner_id': f'-{group_id}',  # Group where post
@@ -182,12 +181,12 @@ def publish_img_on_group_wall(ids, user_id, group_id, message, v):
 
 
 def print_link_to_new_post(group_id, post_id):
-    # https://vk.com/wall-216515114_14
     link = f"New post: https://vk.com/wall-{group_id}_{post_id}"
     print(link)
 
 
-def post_comics_on_group_wall(user_id, group_id, v, comics_file_name, message):
+def post_comics_on_group_wall(access_token, group_id, v, comics_file_name,
+                              message):
     """
     Publishing of photo to group wall on VK:
     1. Getting server address for loading photo to VK.
@@ -195,7 +194,7 @@ def post_comics_on_group_wall(user_id, group_id, v, comics_file_name, message):
     3. Saving photo to group album from server.
     4. Publish post in group with photo.
 
-    user_id - access token from user with rights: photos, groups, wall and
+    access_token - access token from user with rights: photos, groups, wall and
     offline.
     group_id - id of group, can be obtained from
     URL of club. Ex: https://vk.com/club[216515114]
@@ -205,11 +204,12 @@ def post_comics_on_group_wall(user_id, group_id, v, comics_file_name, message):
     Returns post_id of new post
     """
 
-    vk_server_url = fetch_server_url_for_upload_img(user_id, group_id, v)
+    vk_server_url = fetch_server_url_for_upload_img(access_token, group_id, v)
     uploaded_img_data = send_img_to_vk_server(vk_server_url, comics_file_name)
-    photo_and_owner_ids = save_img_to_group_album(uploaded_img_data, user_id,
+    photo_and_owner_ids = save_img_to_group_album(uploaded_img_data,
+                                                  access_token,
                                                   group_id, v)
-    post_id = publish_img_on_group_wall(photo_and_owner_ids, user_id,
+    post_id = publish_img_on_group_wall(photo_and_owner_ids, access_token,
                                         group_id, message, v)
     return post_id
 
@@ -218,14 +218,14 @@ def main():
     logging.basicConfig(level=logging.WARNING)
 
     load_dotenv()
-    user_id = os.getenv('VK_USER_TOKEN')
+    access_token = os.getenv('VK_USER_TOKEN')
     group_id = os.getenv('VK_GROUP_ID')
     vk_api_version = os.getenv('VK_API_VERSION')
 
     try:
         comics_file_name, alt = load_random_xkcd_comics()
 
-        post_id = post_comics_on_group_wall(user_id,
+        post_id = post_comics_on_group_wall(access_token,
                                             group_id,
                                             vk_api_version,
                                             comics_file_name,
