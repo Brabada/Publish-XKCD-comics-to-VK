@@ -13,9 +13,7 @@ import requests
 def get_img_name_from_url(url):
     """Extracting image name with extension from url"""
 
-    logging.debug(f"Extracting name from URL: {url}")
     index = url.rfind('/') + 1
-    logging.debug(f"Index of beginning name: {index} in {url}")
     return url[index:]
 
 
@@ -217,7 +215,7 @@ def post_comics_on_group_wall(access_token, group_id, v, comics_file_name,
 
 
 def main():
-    logging.basicConfig(level=logging.WARNING)
+    logging.basicConfig(level=logging.DEBUG)
 
     load_dotenv()
     access_token = os.getenv('VK_USER_TOKEN')
