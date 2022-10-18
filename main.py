@@ -121,10 +121,12 @@ def send_img_to_vk_server(server_url, file_name):
         files['photo'] = file
         response = requests.post(server_url, files=files)
     response.raise_for_status()
-    return response.json()
+    response = response.json()
+    return response['server'], response['photo'], response['hash']
 
 
-def save_img_to_group_album(uploading_data, access_token, group_id, v):
+def save_img_to_group_album(server_url, photo_url, hash, access_token,
+                            group_id, v):
     """
     Takes metadata of uploaded img on vk server and saved its to the group
     album.
@@ -138,9 +140,9 @@ def save_img_to_group_album(uploading_data, access_token, group_id, v):
         'access_token': access_token,
         'group_id': group_id,
         'v': v,
-        'server': uploading_data['server'],
-        'photo': uploading_data['photo'],
-        'hash': uploading_data['hash'],
+        'server': server_url,
+        'photo': photo_url,
+        'hash': hash,
     }
 
     response = requests.post(url, params=params)
@@ -149,14 +151,11 @@ def save_img_to_group_album(uploading_data, access_token, group_id, v):
     if response.get('error'):
         logging.warning(f"Trying to save uploaded image on server to group "
                         f"album error: {response['error']['error_msg']}")
-    photo_and_owner_ids = {
-        'owner_id': response['response'][0]['owner_id'],
-        'photo_id': response['response'][0]['id'],
-    }
-    return photo_and_owner_ids
+    return response['response'][0]['owner_id'], response['response'][0]['id']
 
 
-def publish_img_on_group_wall(ids, access_token, group_id, message, v):
+def publish_img_on_group_wall(owner_id, photo_id, access_token, group_id,
+                              message, v):
     """
     Publish photo from group album by its photo and owners ids to the group
     wall with message
@@ -166,7 +165,7 @@ def publish_img_on_group_wall(ids, access_token, group_id, message, v):
     method = 'wall.post'
     url = f'https://api.vk.com/method/{method}'
 
-    attachments = f'photo{ids["owner_id"]}_{ids["photo_id"]}'
+    attachments = f'photo{owner_id}_{photo_id}'
     params = {
         'access_token': access_token,
         'v': v,
@@ -205,11 +204,14 @@ def post_comics_on_group_wall(access_token, group_id, v, comics_file_name,
     """
 
     vk_server_url = fetch_server_url_for_upload_img(access_token, group_id, v)
-    uploaded_img_data = send_img_to_vk_server(vk_server_url, comics_file_name)
-    photo_and_owner_ids = save_img_to_group_album(uploaded_img_data,
-                                                  access_token,
-                                                  group_id, v)
-    post_id = publish_img_on_group_wall(photo_and_owner_ids, access_token,
+    server_url, photo_url, _hash = send_img_to_vk_server(vk_server_url,
+                                                comics_file_name)
+    owner_id, photo_id = save_img_to_group_album(server_url,
+                                                 photo_url,
+                                                 _hash,
+                                                 access_token,
+                                                 group_id, v)
+    post_id = publish_img_on_group_wall(owner_id, photo_id, access_token,
                                         group_id, message, v)
     return post_id
 
