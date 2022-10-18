@@ -118,10 +118,10 @@ def send_img_to_vk_server(server_url, file_name):
 
     with open(file_name, 'rb') as file:
         files = {
-            'photo': file,
+            'photo': file
         }
         response = requests.post(server_url, files=files)
-        response.raise_for_status()
+    response.raise_for_status()
     return response.json()
 
 
