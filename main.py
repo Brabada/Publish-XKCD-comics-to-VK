@@ -232,9 +232,9 @@ def main():
                                             alt)
         print_link_to_new_post(group_id, post_id)
     except FileNotFoundError:
-        logging.warning(f"File {comics_file_name} wasn't found for delete.")
+        logging.exception(f"File {comics_file_name} wasn't found for delete.")
     except requests.exceptions.HTTPError:
-        logging.error(f'There is error while fetching info by API.')
+        logging.exception(f'There is error while fetching info by API.')
     finally:
         os.remove(comics_file_name)
         logging.info(f"File {comics_file_name} was successfully deleted.")
