@@ -6,7 +6,6 @@ import os
 from dotenv import load_dotenv
 import requests
 
-
 """=============== XKCD functions section ==============="""
 
 
@@ -40,17 +39,14 @@ def load_xkcd_comics(comics_number):
     :return: comics file name and description from alt
     """
 
-    try:
-        comics_json = fetch_xkcd_comics_json(comics_number)
-        alt = comics_json.get('alt')
-        comics_url = comics_json.get('img')
-        comics_file_name = save_xkcd_comics(comics_url)
-    except requests.exceptions.HTTPError:
-        logging.warning("Couldn't fetch or save url of xkcd image")
-    else:
-        logging.info(f"Comics {comics_file_name} was loaded and saved in root "
-                     f"directory \"{os.path.curdir}\"")
-        return comics_file_name, alt
+    comics_json = fetch_xkcd_comics_json(comics_number)
+    alt = comics_json.get('alt')
+    comics_url = comics_json.get('img')
+    comics_file_name = save_xkcd_comics(comics_url)
+
+    logging.info(f"Comics {comics_file_name} was loaded and saved in root "
+                 f"directory \"{os.path.curdir}\"")
+    return comics_file_name, alt
 
 
 def get_random_xkcd_comics_num():
@@ -66,12 +62,10 @@ def load_random_xkcd_comics():
     Loads random XKCD comics from site and returns comics file name and alt
     """
 
-    try:
-        comics_number = get_random_xkcd_comics_num()
-    except requests.exceptions.HTTPError:
-        logging.error("Can't load random xkcd comics number due HTTPError")
-    else:
-        return load_xkcd_comics(comics_number)
+    comics_number = get_random_xkcd_comics_num()
+
+    logging.error("Can't load random xkcd comics number due HTTPError")
+    return load_xkcd_comics(comics_number)
 
 
 """=============== VK API section ==============="""
@@ -161,7 +155,7 @@ def publish_img_on_group_wall(owner_id, photo_id, access_token, group_id,
         'v': v,
         'attachments': attachments,  # Name of posted img
         'owner_id': f'-{group_id}',  # Group where post
-        'from_group': '1',           # Post by group
+        'from_group': '1',  # Post by group
         'message': message,
     }
     response = requests.get(url, params=params)
@@ -195,7 +189,7 @@ def post_comics_on_group_wall(access_token, group_id, v, comics_file_name,
 
     vk_server_url = fetch_server_url_for_upload_img(access_token, group_id, v)
     server_url, photo_url, _hash = send_img_to_vk_server(vk_server_url,
-                                                comics_file_name)
+                                                         comics_file_name)
     owner_id, photo_id = save_img_to_group_album(server_url,
                                                  photo_url,
                                                  _hash,
