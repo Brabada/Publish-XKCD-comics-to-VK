@@ -9,19 +9,28 @@ import requests
 """=============== XKCD functions section ==============="""
 
 
-def fetch_xkcd_comics_json(comics_number):
+def load_random_xkcd_comics():
+    """
+    Loads random XKCD comics from site, saved this comics and returns comics
+    file name and alt.
+    """
+
+    # Getting random comics number by fetching total number of comics from xkcd
+    response = requests.get('https://xkcd.com/info.0.json')
+    response.raise_for_status()
+    _to = response.json()['num']
+    _from = 1
+    comics_number = random.randint(_from, _to)
+
+    # Fetching comics and its alt (description) from xkcd
     url = f"https://xkcd.com/{comics_number}/info.0.json"
     response = requests.get(url=url)
     response.raise_for_status()
-    return response.json()
+    comics_json = response.json()
+    alt = comics_json.get('alt')
+    comics_url = comics_json.get('img')
 
-
-def save_xkcd_comics(comics_url):
-    """
-    Download comics by comics_url and save to the root directory
-    Returns comics file name
-    """
-
+    # Download comics by comics_url and save to the root directory
     response = requests.get(comics_url)
     response.raise_for_status()
     comics = response.content
@@ -29,43 +38,10 @@ def save_xkcd_comics(comics_url):
     logging.info(f'Comics name: {comics_filename}')
     with open(comics_filename, 'wb') as file:
         file.write(comics)
-    return comics_filename
 
-
-def load_xkcd_comics(comics_number):
-    """
-    Load xkcd comics from https://xkcd.com/ by comics number and save in
-    root directory
-    :return: comics file name and description from alt
-    """
-
-    comics_json = fetch_xkcd_comics_json(comics_number)
-    alt = comics_json.get('alt')
-    comics_url = comics_json.get('img')
-    comics_file_name = save_xkcd_comics(comics_url)
-
-    logging.info(f"Comics {comics_file_name} was loaded and saved in root "
+    logging.info(f"Comics {comics_filename} was loaded and saved in root "
                  f"directory \"{os.path.curdir}\"")
-    return comics_file_name, alt
-
-
-def get_random_xkcd_comics_num():
-    response = requests.get('https://xkcd.com/info.0.json')
-    response.raise_for_status()
-    _to = response.json()['num']
-    _from = 1
-    return random.randint(_from, _to)
-
-
-def load_random_xkcd_comics():
-    """
-    Loads random XKCD comics from site and returns comics file name and alt
-    """
-
-    comics_number = get_random_xkcd_comics_num()
-
-    logging.error("Can't load random xkcd comics number due HTTPError")
-    return load_xkcd_comics(comics_number)
+    return comics_filename, alt
 
 
 """=============== VK API section ==============="""
@@ -201,7 +177,7 @@ def post_comics_on_group_wall(access_token, group_id, v, comics_file_name,
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.WARNING)
 
     load_dotenv()
     access_token = os.getenv('VK_USER_TOKEN')
