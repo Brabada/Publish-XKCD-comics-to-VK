@@ -10,13 +10,6 @@ import requests
 """=============== XKCD functions section ==============="""
 
 
-def get_img_name_from_url(url):
-    """Extracting image name with extension from url"""
-
-    index = url.rfind('/') + 1
-    return url[index:]
-
-
 def fetch_xkcd_comics_json(comics_number):
     url = f"https://xkcd.com/{comics_number}/info.0.json"
     response = requests.get(url=url)
@@ -33,12 +26,11 @@ def save_xkcd_comics(comics_url):
     response = requests.get(comics_url)
     response.raise_for_status()
     comics = response.content
-
-    comics_file_name = get_img_name_from_url(urlparse(comics_url).path)
-    logging.info(f'Comics name: {comics_file_name}')
-    with open(comics_file_name, 'wb') as file:
+    header, comics_filename = os.path.split(urlparse(comics_url).path)
+    logging.info(f'Comics name: {comics_filename}')
+    with open(comics_filename, 'wb') as file:
         file.write(comics)
-    return comics_file_name
+    return comics_filename
 
 
 def load_xkcd_comics(comics_number):
