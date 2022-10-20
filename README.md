@@ -3,7 +3,7 @@
 Project that takes random comics from https://xkcd.com/ by [xkcd API](https://xkcd.com/json.html) and posts them
 its with author's comments to group in VK via [VK API](https://vk.com/dev/api_requests).
 
-Group for example: https://vk.com/club216515114
+Group for example: https://vk.com/club216515114.
 
 
 ## How to install
@@ -43,5 +43,3 @@ Output should show link to new post in your group:
 $ python main.py
 New post: https://vk.com/wall-216515114_23
 ```
-
-
