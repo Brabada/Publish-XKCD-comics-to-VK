@@ -9,20 +9,18 @@ import requests
 """=============== XKCD functions section ==============="""
 
 
-def load_random_xkcd_comics():
+def download_random_xkcd_comics():
     """
     Loads random XKCD comics from site, saved this comics and returns comics
     file name and alt.
     """
 
-    # Getting random comics number by fetching total number of comics from xkcd
     response = requests.get('https://xkcd.com/info.0.json')
     response.raise_for_status()
     _to = response.json()['num']
     _from = 1
     comics_number = random.randint(_from, _to)
 
-    # Fetching comics and its alt (description) from xkcd
     url = f"https://xkcd.com/{comics_number}/info.0.json"
     response = requests.get(url=url)
     response.raise_for_status()
@@ -85,7 +83,7 @@ def send_img_to_vk_server(server_url, file_name):
     return response['server'], response['photo'], response['hash']
 
 
-def save_img_to_group_album(server_url, photo_url, hash, access_token,
+def save_img_to_group_album(server_url, photo_url, _hash, access_token,
                             group_id, v):
     """
     Takes metadata of uploaded img on vk server and saved its to the group
@@ -102,7 +100,7 @@ def save_img_to_group_album(server_url, photo_url, hash, access_token,
         'v': v,
         'server': server_url,
         'photo': photo_url,
-        'hash': hash,
+        'hash': _hash,
     }
 
     response = requests.post(url, params=params)
@@ -185,7 +183,7 @@ def main():
     vk_api_version = os.getenv('VK_API_VERSION')
 
     try:
-        comics_file_name, alt = load_random_xkcd_comics()
+        comics_file_name, alt = download_random_xkcd_comics()
 
         post_id = post_comics_on_group_wall(access_token,
                                             group_id,
