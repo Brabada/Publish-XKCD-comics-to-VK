@@ -28,7 +28,6 @@ def download_random_xkcd_comics():
     alt = comics_json.get('alt')
     comics_url = comics_json.get('img')
 
-    # Download comics by comics_url and save to the root directory
     response = requests.get(comics_url)
     response.raise_for_status()
     comics = response.content
@@ -127,9 +126,9 @@ def publish_img_on_group_wall(owner_id, photo_id, access_token, group_id,
     params = {
         'access_token': access_token,
         'v': v,
-        'attachments': attachments,  # Name of posted img
-        'owner_id': f'-{group_id}',  # Group where post
-        'from_group': '1',  # Post by group
+        'attachments': attachments,
+        'owner_id': f'-{group_id}',
+        'from_group': '1',
         'message': message,
     }
     response = requests.get(url, params=params)
